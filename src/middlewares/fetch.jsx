@@ -3,6 +3,7 @@ import Cookies from 'js-cookie'
 
 const token = Cookies.get('admin_token')
 const BASE_URL = 'https://xt-server-beta.onrender.com'
+
 // const BASE_URL = 'http://localhost:8000/'
 
 const instance = axios.create({
