@@ -57,21 +57,31 @@ export const UserUpdate = ({ isOpen, setIsOpen }) => {
 
     try {
       const formImageData = new FormData()
-      formImageData.append('images', file)
+      formImageData.append('image', file)
 
       setImagePending(true)
       setError('')
-      const { data } = await Fetch.post('/upload', formImageData)
 
-      setPreviewAvatar(data.images[0])
-      setUserData(prevData => ({
-        ...prevData,
-        avatar: data.images[0]
-      }))
-    } catch (error) {
-      setError(
-        error.response?.data?.message || 'Расмни юклашда хатолик юз берди.'
+      const res = await fetch(
+        `https://api.imgbb.com/1/upload?key=955f1e37f0aa643262e734c080305b10`,
+        {
+          method: 'POST',
+          body: formImageData
+        }
       )
+
+      const result = await res.json()
+      if (result.success) {
+        setPreviewAvatar(result.data.url)
+        setUserData(prevData => ({
+          ...prevData,
+          avatar: result.data.url
+        }))
+      } else {
+        throw new Error('Yuklash muvaffaqiyatsiz bo‘ldi')
+      }
+    } catch (error) {
+      setError(error.message || 'Расмни юклашда хатолик юз берди.')
       setPreviewAvatar(userData.avatar || '')
     } finally {
       setImagePending(false)

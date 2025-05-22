@@ -133,35 +133,49 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
   const handleFileChange = async e => {
     if (!e.target.files || e.target.files.length === 0) return
 
-    const formImageData = new FormData()
     const files = Array.from(e.target.files)
-
     const localPreviews = files.map(file => URL.createObjectURL(file))
-    setPreviewImages([...previewImages, ...localPreviews])
-
-    files.forEach(file => {
-      formImageData.append('images', file)
-    })
+    setPreviewImages(prev => [...prev, ...localPreviews])
 
     try {
       setImagePending(true)
       setError('')
-      const { data } = await Fetch.post('/upload', formImageData)
 
-      setPreviewImages(prevImages => {
-        const oldImages = prevImages.slice(0, prevImages.length - files.length)
-        return [...oldImages, ...data.images]
+      const uploadedUrls = []
+
+      for (const file of files) {
+        const formData = new FormData()
+        formData.append('image', file)
+
+        const res = await fetch(
+          `https://api.imgbb.com/1/upload?key=955f1e37f0aa643262e734c080305b10`,
+          {
+            method: 'POST',
+            body: formData
+          }
+        )
+
+        const result = await res.json()
+        if (result.success) {
+          uploadedUrls.push(result.data.url)
+        } else {
+          throw new Error('Yuklash muvaffaqiyatsiz bo‘ldi')
+        }
+      }
+
+      setPreviewImages(prev => {
+        const old = prev.slice(0, prev.length - files.length)
+        return [...old, ...uploadedUrls]
       })
 
-      setProductData(prevData => ({
-        ...prevData,
-        photos: [...(prevData.photos || []), ...data.images]
+      setProductData(prev => ({
+        ...prev,
+        photos: [...(prev.photos || []), ...uploadedUrls]
       }))
     } catch (err) {
+      console.error(err)
       setError('Расмларни юклашда хатолик юз берди')
-      setPreviewImages(prevImages =>
-        prevImages.slice(0, prevImages.length - files.length)
-      )
+      setPreviewImages(prev => prev.slice(0, prev.length - files.length))
     } finally {
       setImagePending(false)
     }

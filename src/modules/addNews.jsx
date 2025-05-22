@@ -37,8 +37,8 @@ export const AddNews = ({ isOpen, setIsOpen }) => {
 
   const handleFileChange = async e => {
     try {
-      const formImageData = new FormData()
       const files = e.target.files
+      if (!files || files.length === 0) return
 
       const newPreviewUrls = []
       for (let i = 0; i < files.length; i++) {
@@ -46,17 +46,37 @@ export const AddNews = ({ isOpen, setIsOpen }) => {
       }
       setPreviewUrls(newPreviewUrls)
 
-      for (let i = 0; i < files.length; i++) {
-        formImageData.append('images', files[i])
-      }
-
       setImagePending(true)
       setError('')
 
-      const { data } = await Fetch.post('/upload', formImageData)
+      const uploadedImages = []
+
+      // Fayllarni alohida-alohida imgbb'ga yuborish (har biriga alohida so‘rov)
+      for (let i = 0; i < files.length; i++) {
+        const formImageData = new FormData()
+        formImageData.append('image', files[i]) // 👈 imgbb uchun 'image'
+
+        const res = await fetch(
+          `https://api.imgbb.com/1/upload?key=955f1e37f0aa643262e734c080305b10`,
+          {
+            method: 'POST',
+            body: formImageData
+          }
+        )
+
+        const result = await res.json()
+
+        if (result.success) {
+          uploadedImages.push(result.data.url)
+        } else {
+          throw new Error('Rasmlardan biri yuklanmadi.')
+        }
+      }
+
+      // Rasmlar muvaffaqiyatli yuklangach, carousel uchun saqlash
       setCarouselData(prevData => ({
         ...prevData,
-        photos: data.images
+        photos: uploadedImages
       }))
     } catch (error) {
       setError('Расмларни юклашда хатолик. Илтимос, қайта уриниб кўринг.')
@@ -79,7 +99,7 @@ export const AddNews = ({ isOpen, setIsOpen }) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className='fixed inset-0 z-[999] bg-black/70 backdrop-blur-sm flex items-center justify-center'
+          className='fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center'
           onClick={() => {
             setIsOpen(false)
             IsOpenModal(false)
@@ -148,11 +168,11 @@ export const AddNews = ({ isOpen, setIsOpen }) => {
 
                 <div className='space-y-2'>
                   <label className='block text-sm font-medium text-gray-700'>
-                    Расмлар
+                    Расм
                   </label>
 
                   <div
-                    className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
+                    className={`relative border-2 border-dashed rounded-lg p-4 transition-colors w-full h-full ${
                       imagePending
                         ? 'border-purple-300 bg-purple-50'
                         : 'border-gray-300 hover:border-purple-400'
@@ -177,17 +197,18 @@ export const AddNews = ({ isOpen, setIsOpen }) => {
                           </p>
                         </>
                       )}
-
-                      <input
-                        type='file'
-                        name='photos'
-                        onChange={handleFileChange}
-                        multiple
-                        accept='image/*'
-                        className='absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed'
-                        disabled={imagePending}
-                      />
                     </div>
+
+                    {/* 👇 input faqat rasm zonasida ishlaydi */}
+                    <input
+                      type='file'
+                      name='photos'
+                      onChange={handleFileChange}
+                      multiple
+                      accept='image/*'
+                      disabled={imagePending}
+                      className='absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer'
+                    />
                   </div>
 
                   {previewUrls.length > 0 && (
