@@ -24,11 +24,12 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
     brand: '',
     photos: [],
     colors: [],
-    size: '',
+    sizes: [],
     rating: 0
   })
 
   const [newColor, setNewColor] = useState({ name: '', value: '#000000' })
+  const [newSize, setNewSize] = useState('')
   const [previewImages, setPreviewImages] = useState([])
 
   useEffect(() => {
@@ -39,6 +40,20 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
           setError('')
           const { data } = await Fetch.get(`/product/one/${productId}`)
           const product = data.data
+
+          // Convert string sizes to array of objects if needed
+          let sizesArray = product.sizes || []
+          if (
+            typeof product.sizes === 'string' &&
+            product.sizes.trim() !== ''
+          ) {
+            sizesArray = product.sizes
+              .split(',')
+              .map(size => ({ size: size.trim() }))
+          } else if (!Array.isArray(product.sizes)) {
+            sizesArray = []
+          }
+
           setProductData({
             title: product.title || '',
             description: product.description || 'N/A',
@@ -52,7 +67,7 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
             brand: product.brand || '',
             photos: product.photos || [],
             colors: product.colors || [],
-            size: product.size || '',
+            sizes: sizesArray,
             rating: product.rating || ''
           })
           setPreviewImages(product.photos || [])
@@ -83,11 +98,12 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
         brand: '',
         photos: [],
         colors: [],
-        size: '',
+        sizes: [],
         rating: ''
       })
       setPreviewImages([])
       setNewColor({ name: '', value: '#000000' })
+      setNewSize('')
       setError('')
       setSuccess(false)
     }
@@ -130,6 +146,27 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
     }))
   }
 
+  const addSize = () => {
+    if (!newSize.trim()) {
+      setError('Ўлчам киритиш шарт')
+      return
+    }
+
+    setProductData(prev => ({
+      ...prev,
+      sizes: [...prev.sizes, { size: newSize.trim() }]
+    }))
+    setNewSize('')
+    setError('')
+  }
+
+  const removeSize = index => {
+    setProductData(prev => ({
+      ...prev,
+      sizes: prev.sizes.filter((_, i) => i !== index)
+    }))
+  }
+
   const handleFileChange = async e => {
     if (!e.target.files || e.target.files.length === 0) return
 
@@ -159,7 +196,7 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
         if (result.success) {
           uploadedUrls.push(result.data.url)
         } else {
-          throw new Error('Yuklash muvaffaqiyatsiz bo‘ldi')
+          throw new Error("Yuklash muvaffaqiyatsiz bo'ldi")
         }
       }
 
@@ -428,20 +465,6 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
                     />
                   </div>
 
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-1'>
-                      Ўлчами
-                    </label>
-                    <input
-                      type='text'
-                      name='size'
-                      value={productData.size}
-                      onChange={handleInputChange}
-                      className='w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent'
-                      placeholder='Маҳсулот ўлчами'
-                    />
-                  </div>
-
                   {/* Colors section */}
                   <div className='md:col-span-2'>
                     <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -492,6 +515,55 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
                               <button
                                 type='button'
                                 onClick={() => removeColor(index)}
+                                className='text-gray-500 hover:text-red-500'
+                              >
+                                <X className='h-4 w-4' />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sizes section */}
+                  <div className='md:col-span-2'>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Ўлчамларни қўшиш
+                    </label>
+                    <div className='flex gap-2 mb-2'>
+                      <input
+                        type='text'
+                        value={newSize}
+                        onChange={e => setNewSize(e.target.value)}
+                        className='flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                        placeholder='Ўлчам (масалан: XL, 42, M)'
+                      />
+                      <button
+                        type='button'
+                        onClick={addSize}
+                        className='px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors'
+                      >
+                        <Plus className='h-5 w-5' />
+                      </button>
+                    </div>
+
+                    {/* Display added sizes */}
+                    {productData.sizes.length > 0 && (
+                      <div className='mt-2'>
+                        <p className='text-sm font-medium text-gray-700 mb-2'>
+                          Қўшилган ўлчамлар:
+                        </p>
+                        <div className='flex flex-wrap gap-2'>
+                          {productData.sizes.map((sizeObj, index) => (
+                            <div
+                              key={index}
+                              className='flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1'
+                            >
+                              <span className='text-sm'>{sizeObj.size}</span>
+                              <button
+                                type='button'
+                                onClick={() => removeSize(index)}
                                 className='text-gray-500 hover:text-red-500'
                               >
                                 <X className='h-4 w-4' />
