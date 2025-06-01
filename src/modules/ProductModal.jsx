@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { X, Upload, Loader2, Save, Trash2, Plus } from 'lucide-react'
+import { X, Upload, Loader2, Save, Trash2, Plus, Ruler } from 'lucide-react'
 import Fetch from '../middlewares/fetch'
 import { mutate } from 'swr'
 import { IsOpenModal } from '../assets/css/Modal'
@@ -41,7 +41,6 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
           const { data } = await Fetch.get(`/product/one/${productId}`)
           const product = data.data
 
-          // Convert string sizes to array of objects if needed
           let sizesArray = product.sizes || []
           if (
             typeof product.sizes === 'string' &&
@@ -99,7 +98,7 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
         photos: [],
         colors: [],
         sizes: [],
-        rating: ''
+        rating: 5
       })
       setPreviewImages([])
       setNewColor({ name: '', value: '#000000' })
@@ -558,13 +557,18 @@ export const ProductModal = ({ isOpen, setIsOpen, productId = null }) => {
                           {productData.sizes.map((sizeObj, index) => (
                             <div
                               key={index}
-                              className='flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1'
+                              className='flex items-center gap-2 bg-blue-50 rounded-full px-3 py-1 border border-blue-200'
                             >
-                              <span className='text-sm'>{sizeObj.size}</span>
+                              <div className='w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center'>
+                                <Ruler className='w-2.5 h-2.5 text-white' />
+                              </div>
+                              <span className='text-sm text-blue-700 font-medium'>
+                                {sizeObj.size}
+                              </span>
                               <button
                                 type='button'
                                 onClick={() => removeSize(index)}
-                                className='text-gray-500 hover:text-red-500'
+                                className='text-blue-400 hover:text-red-500 transition-colors'
                               >
                                 <X className='h-4 w-4' />
                               </button>
